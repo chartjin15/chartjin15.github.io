@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>仿k.ilib.io/u/clock.html</title>
+    <style>
+        body {
+            text-align: center;
+        }
+
+        #time {
+            font-size: 6em;
+        }
+
+        #date {
+            font-size: 4em;
+        }
+    </style>
+</head>
+
+<body>
+    <p id="time">下午 10:25:09</p>
+    <p id="date">10月16日 星期六</p>
+
+    <script>
+        function refresh() {
+            var timeZone = 8;
+            var d = new Date();
+            d.setMinutes(d.getMinutes() + d.getTimezoneOffset() + (timeZone * 60));
+
+            var amOrPm = ["上午", "下午"];
+            var hour = d.getHours() - Math.floor(d.getHours() / 13) * 12;
+            document.getElementById("time").innerHTML = amOrPm[Math.floor(d.getHours() / 12)] + " " + ("0" + hour).slice(-2) + ":" + ("0" + d.getMinutes()).slice(-2) + ":" + ("0" + d.getSeconds()).slice(-2);
+
+            var whichDay = ["日", "一", "二", "三", "四", "五", "六"];
+            document.getElementById("date").innerHTML = (d.getMonth() + 1) + "月" + d.getDate() + "日 星期" + whichDay[d.getDay()];
+        }
+
+        refresh()
+        setInterval("refresh()", 500)
+    </script>
+
+</body>
+
+</html>
