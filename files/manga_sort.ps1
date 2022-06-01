@@ -1,4 +1,5 @@
-$filepath = "./manga_tracking.csv"
+# $filepath = "./manga_tracking.csv"
+$filepath = "./ja_dict.csv"
 $temp = Get-Content -Encoding "utf8" -Path $filepath
 $temp[0] | Set-Content -Encoding "utf8" -Path $filepath
 $temp[1..$temp.Length] | Sort-Object | Add-Content -Encoding "utf8" -Path $filepath
