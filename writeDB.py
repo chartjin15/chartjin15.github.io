@@ -1,6 +1,6 @@
-import datetime, sys, sqlite3
+import datetime, readline, sqlite3, sys
 
-connect = sqlite3.connect("对象文本" if len(sys.argv) < 2 else sys.argv[1] + ".db")
+connect = sqlite3.connect(("对象文本" if len(sys.argv) < 2 else sys.argv[1]) + ".db")
 cursor = connect.cursor()
 
 cursor.execute(
