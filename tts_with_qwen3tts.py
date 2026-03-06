@@ -5,7 +5,7 @@ from qwen_tts import Qwen3TTSModel
 from soundfile import write
 from torch import bfloat16
 import os, sys
-# import time
+import time
 
 BATCH_SIZE = 8
 REF_AUDIO = '1739124223158167033.wav'
@@ -18,7 +18,7 @@ def split_lines(lines: list[str], seps='。？！：；') -> list[str]:
 
 def process_tts(input_path: Path) -> None:
     with input_path.open(mode='r', encoding='utf-8') as file_obj:
-        total_lines = [line.strip().translate(str.maketrans('…', '。', '“”‘’「」『』')) for line in file_obj.readlines()]
+        total_lines = [line.strip().translate(str.maketrans('…', '。', '“”‘’「」『』（）')) for line in file_obj.readlines()]
 
     validated_lines = []
     for i, line in enumerate(total_lines):
@@ -39,10 +39,10 @@ def process_tts(input_path: Path) -> None:
             return None
 
     # model = Qwen3TTSModel.from_pretrained('C:\\Users\\xsjcy\\Qwen3-TTS-12Hz-1.7B-Base', device_map='cuda:0', dtype=bfloat16, attn_implementation='flash_attention_2')
-    model = Qwen3TTSModel.from_pretrained('C:\\Users\\xsjcy\\Qwen3-TTS-12Hz-1.7B-Base', device_map='cuda:0', dtype=bfloat16)
+    model = Qwen3TTSModel.from_pretrained('C:\\Users\\xsjcy\\Qwen3-TTS-12Hz-1.7B-Base', device_map='cpu', dtype=bfloat16)
 
-    for index in range(0, validated_line_num, BATCH_SIZE):
-        # start_time = time.time()
+    for index in range(0, len(validated_lines), BATCH_SIZE):
+        start_time = time.time()
 
         try:
             prompt = Qwen3TTSModel.create_voice_clone_prompt(model, ref_audio=REF_AUDIO, ref_text=REF_TEXT, x_vector_only_mode=False)
@@ -62,8 +62,8 @@ def process_tts(input_path: Path) -> None:
         except KeyboardInterrupt:
             sys.exit(0)
 
-        # end_time = time.time()
-        # print(f'{end_time - start_time:.6f}')
+        end_time = time.time()
+        print(f'Time: {end_time - start_time:.2f}, Character Per Second: {sum([len(text) for text in texts]) / (end_time - start_time):.2f}')
 
     os.system(f'ffmpeg -f concat -i {input_basename}.concat -c:a libmp3lame -b:a 320k {input_basename}.mp3')
 
