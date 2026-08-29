@@ -2,48 +2,1605 @@
 <html lang="zh-CN">
 
 <head>
-    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>仿k.ilib.io/u/clock.html</title>
+    <title>时钟</title>
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box
+        }
+
+        :root {
+            --accent: #22d3ee;
+            --accent-soft: rgba(34, 211, 238, .15);
+            --accent-glow: rgba(34, 211, 238, .45)
+        }
+
+        body[data-theme="dark"] {
+            --bg: #0a0e1a;
+            --bg2: #111832;
+            --card: rgba(255, 255, 255, .05);
+            --text: #eef2ff;
+            --muted: #8b93b5;
+            --border: rgba(255, 255, 255, .1);
+            --shadow: rgba(0, 0, 0, .5)
+        }
+
+        body[data-theme="light"] {
+            --bg: #eef1f8;
+            --bg2: #f8fafc;
+            --card: rgba(255, 255, 255, .75);
+            --text: #1a2035;
+            --muted: #5b6480;
+            --border: rgba(20, 30, 60, .1);
+            --shadow: rgba(30, 40, 80, .15)
+        }
+
+        body[data-theme="aurora"] {
+            --bg: #0b1020;
+            --bg2: #141b38;
+            --card: rgba(255, 255, 255, .06);
+            --text: #f0f4ff;
+            --muted: #9aa3c8;
+            --border: rgba(255, 255, 255, .12);
+            --shadow: rgba(0, 0, 0, .5)
+        }
+
+        html {
+            scroll-behavior: smooth
+        }
+
         body {
+            min-height: 100vh;
+            font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+            color: var(--text);
+            background: var(--bg);
+            overflow-x: hidden
+        }
+
+        body[data-theme="aurora"] {
+            background: linear-gradient(130deg, #0b1020, #1a1440, #0e2a3f, #2a1045, #0b1020);
+            background-size: 400% 400%;
+            animation: aurora 18s ease infinite
+        }
+
+        @keyframes aurora {
+            0% {
+                background-position: 0% 50%
+            }
+
+            50% {
+                background-position: 100% 50%
+            }
+
+            100% {
+                background-position: 0% 50%
+            }
+        }
+
+        #bg {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none
+        }
+
+        .wrap {
+            position: relative;
+            z-index: 1;
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 32px 20px 60px
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 16px;
+            margin-bottom: 24px
+        }
+
+        .greet {
+            font-size: clamp(1.6rem, 4vw, 2.4rem);
+            font-weight: 700;
+            letter-spacing: .5px;
+            background: linear-gradient(90deg, var(--text), var(--accent));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent
+        }
+
+        .dateline {
+            color: var(--muted);
+            margin-top: 6px;
+            font-size: .95rem
+        }
+
+        .quote {
+            margin-top: 10px;
+            color: var(--muted);
+            font-style: italic;
+            font-size: .9rem;
+            border-left: 3px solid var(--accent);
+            padding-left: 10px;
+            max-width: 520px
+        }
+
+        .iconbtn {
+            background: var(--card);
+            border: 1px solid var(--border);
+            color: var(--text);
+            width: 42px;
+            height: 42px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 1.1rem;
+            backdrop-filter: blur(8px);
+            transition: .2s;
+            flex-shrink: 0
+        }
+
+        .iconbtn:hover {
+            border-color: var(--accent);
+            box-shadow: 0 0 14px var(--accent-glow);
+            transform: translateY(-1px)
+        }
+
+        .tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 22px;
+            flex-wrap: wrap
+        }
+
+        .tab {
+            padding: 10px 22px;
+            border-radius: 999px;
+            border: 1px solid var(--border);
+            background: var(--card);
+            color: var(--muted);
+            cursor: pointer;
+            font-size: .95rem;
+            backdrop-filter: blur(8px);
+            transition: .2s
+        }
+
+        .tab:hover {
+            color: var(--text)
+        }
+
+        .tab.active {
+            color: #081018;
+            background: var(--accent);
+            border-color: var(--accent);
+            font-weight: 600;
+            box-shadow: 0 4px 18px var(--accent-glow)
+        }
+
+        .card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            backdrop-filter: blur(12px);
+            box-shadow: 0 8px 30px var(--shadow);
+            padding: 24px
+        }
+
+        .grid {
+            display: grid;
+            gap: 20px
+        }
+
+        .clockgrid {
+            grid-template-columns: 1.2fr 1fr
+        }
+
+        .timergrid {
+            grid-template-columns: repeat(3, 1fr)
+        }
+
+        section {
+            display: none;
+            animation: fadein .35s ease
+        }
+
+        section.active {
+            display: block
+        }
+
+        @keyframes fadein {
+            from {
+                opacity: 0;
+                transform: translateY(10px)
+            }
+
+            to {
+                opacity: 1;
+                transform: none
+            }
+        }
+
+        .cardtitle {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--muted);
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px
+        }
+
+        .cardtitle::before {
+            content: "";
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--accent);
+            box-shadow: 0 0 8px var(--accent)
+        }
+
+        .clockcard {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 18px
+        }
+
+        .dial {
+            position: relative;
+            width: min(320px, 72vw);
+            aspect-ratio: 1;
+            border-radius: 50%;
+            background: radial-gradient(circle at 50% 40%, var(--bg2), var(--bg));
+            border: 1px solid var(--border);
+            box-shadow: inset 0 0 40px rgba(0, 0, 0, .35), 0 0 30px var(--accent-soft)
+        }
+
+        .tick {
+            position: absolute;
+            left: 50%;
+            top: 0;
+            width: 2px;
+            height: 100%;
+            margin-left: -1px;
+            transform: rotate(var(--r));
+            transform-origin: center;
+            pointer-events: none
+        }
+
+        .tick::before {
+            content: "";
+            position: absolute;
+            top: 5px;
+            left: 0;
+            width: 2px;
+            height: 13px;
+            background: var(--muted);
+            border-radius: 2px;
+            opacity: .55
+        }
+
+        .tick::after {
+            content: "";
+            position: absolute;
+            bottom: 5px;
+            left: 0;
+            width: 2px;
+            height: 13px;
+            background: var(--muted);
+            border-radius: 2px;
+            opacity: .55
+        }
+
+        .tick.major::before {
+            width: 3px;
+            left: -.5px;
+            height: 18px;
+            background: var(--accent);
+            opacity: .9
+        }
+
+        .tick.major::after {
+            width: 3px;
+            left: -.5px;
+            height: 18px;
+            background: var(--accent);
+            opacity: .9
+        }
+
+        .hand {
+            position: absolute;
+            left: 50%;
+            bottom: 50%;
+            transform-origin: bottom center;
+            border-radius: 999px
+        }
+
+        .hand.h {
+            width: 6px;
+            height: 24%;
+            background: var(--text);
+            margin-left: -3px
+        }
+
+        .hand.m {
+            width: 4px;
+            height: 34%;
+            background: var(--text);
+            margin-left: -2px
+        }
+
+        .hand.s {
+            width: 2px;
+            height: 40%;
+            background: var(--accent);
+            margin-left: -1px;
+            box-shadow: 0 0 8px var(--accent)
+        }
+
+        .pin {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            width: 14px;
+            height: 14px;
+            background: var(--accent);
+            border: 3px solid var(--bg);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 2;
+            box-shadow: 0 0 10px var(--accent-glow)
+        }
+
+        .digital {
+            font-size: clamp(2.6rem, 8vw, 4.2rem);
+            font-weight: 700;
+            font-variant-numeric: tabular-nums;
+            letter-spacing: 2px;
+            text-shadow: 0 0 24px var(--accent-soft);
+            white-space: nowrap
+        }
+
+        .wclock {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 4px;
+            border-bottom: 1px dashed var(--border);
+            font-variant-numeric: tabular-nums
+        }
+
+        .wclock:last-child {
+            border-bottom: none
+        }
+
+        .wclock .city {
+            color: var(--muted);
+            font-size: .9rem
+        }
+
+        .wclock .t {
+            font-weight: 600;
+            font-size: 1.05rem
+        }
+
+        .wclock .diff {
+            font-size: .75rem;
+            color: var(--accent);
+            background: var(--accent-soft);
+            padding: 2px 8px;
+            border-radius: 999px;
+            margin-left: 10px
+        }
+
+        .infogrid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px
+        }
+
+        .infoitem {
+            background: var(--bg2);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 12px 14px
+        }
+
+        .infoitem .k {
+            font-size: .78rem;
+            color: var(--muted)
+        }
+
+        .infoitem .v {
+            font-size: 1.15rem;
+            font-weight: 700;
+            margin-top: 4px
+        }
+
+        .btnrow {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 16px
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            background: var(--card);
+            color: var(--text);
+            cursor: pointer;
+            font-size: .9rem;
+            transition: .2s;
+            backdrop-filter: blur(6px)
+        }
+
+        .btn:hover {
+            border-color: var(--accent);
+            transform: translateY(-1px)
+        }
+
+        .btn.primary {
+            background: var(--accent);
+            color: #081018;
+            border-color: var(--accent);
+            font-weight: 700;
+            box-shadow: 0 4px 16px var(--accent-glow)
+        }
+
+        .btn.danger:hover {
+            border-color: #f87171;
+            color: #f87171
+        }
+
+        .btn:disabled {
+            opacity: .35;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none
+        }
+
+        .btn:disabled:hover {
+            border-color: var(--border);
+            color: var(--text)
+        }
+
+        .timercard {
+            text-align: center
+        }
+
+        .bigtime {
+            font-size: clamp(2rem, 5vw, 2.8rem);
+            font-weight: 700;
+            font-variant-numeric: tabular-nums;
+            letter-spacing: 2px;
+            min-height: 1.2em;
+            margin: 14px 0
+        }
+
+        .bigtime.running {
+            color: var(--accent);
+            text-shadow: 0 0 18px var(--accent-glow)
+        }
+
+        .laps {
+            max-height: 150px;
+            overflow-y: auto;
+            text-align: left;
+            margin-top: 12px;
+            font-size: .85rem;
+            color: var(--muted);
+            font-variant-numeric: tabular-nums
+        }
+
+        .laps div {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 8px;
+            border-bottom: 1px dashed var(--border)
+        }
+
+        .timeinputs {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 4px
+        }
+
+        .timeinputs input {
+            width: 70px;
+            padding: 10px 6px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            background: var(--bg2);
+            color: var(--text);
             text-align: center;
+            font-size: 1.1rem;
+            font-weight: 600
         }
 
-        #time {
-            font-size: 6em;
+        .timeinputs input:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 10px var(--accent-soft)
         }
 
-        #date {
-            font-size: 4em;
+        .timeinputs span {
+            color: var(--muted);
+            font-weight: 700
+        }
+
+        .presets {
+            display: flex;
+            gap: 6px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin: 10px 0
+        }
+
+        .preset {
+            padding: 5px 12px;
+            border-radius: 999px;
+            border: 1px solid var(--border);
+            background: transparent;
+            color: var(--muted);
+            cursor: pointer;
+            font-size: .8rem;
+            transition: .2s
+        }
+
+        .preset:hover {
+            color: var(--text);
+            border-color: var(--accent)
+        }
+
+        .ringwrap {
+            position: relative;
+            width: 150px;
+            margin: 8px auto
+        }
+
+        .ringwrap svg {
+            transform: rotate(-90deg)
+        }
+
+        .ringwrap .track {
+            stroke: var(--border)
+        }
+
+        .ringwrap .prog {
+            stroke: var(--accent);
+            stroke-linecap: round;
+            transition: stroke-dashoffset .5s linear;
+            filter: drop-shadow(0 0 6px var(--accent-glow))
+        }
+
+        .ringlabel {
+            position: absolute;
+            inset: 0
+        }
+
+        .ringlabel .mode {
+            position: absolute;
+            left: 0;
+            right: 0;
+            top: 27%;
+            text-align: center;
+            font-size: .8rem;
+            color: var(--muted)
+        }
+
+        .ringlabel .time {
+            position: absolute;
+            left: 0;
+            right: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            text-align: center;
+            font-size: 1.5rem;
+            font-weight: 700;
+            font-variant-numeric: tabular-nums
+        }
+
+        .pomdots {
+            display: flex;
+            gap: 6px;
+            justify-content: center;
+            margin-top: 6px
+        }
+
+        .pomdot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--border)
+        }
+
+        .pomdot.done {
+            background: var(--accent);
+            box-shadow: 0 0 6px var(--accent-glow)
+        }
+
+        .todoinput {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 16px
+        }
+
+        .todoinput input {
+            flex: 1;
+            padding: 12px 16px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            background: var(--bg2);
+            color: var(--text);
+            font-size: .95rem
+        }
+
+        .todoinput input:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 10px var(--accent-soft)
+        }
+
+        .todoitem {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 11px 10px;
+            border-bottom: 1px dashed var(--border);
+            transition: .15s
+        }
+
+        .todoitem:hover {
+            background: var(--accent-soft)
+        }
+
+        .todoitem .box {
+            width: 22px;
+            height: 22px;
+            border-radius: 7px;
+            border: 2px solid var(--muted);
+            cursor: pointer;
+            flex-shrink: 0;
+            transition: .2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: .8rem;
+            color: transparent
+        }
+
+        .todoitem.done .box {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: #081018
+        }
+
+        .todoitem.done .txt {
+            text-decoration: line-through;
+            color: var(--muted)
+        }
+
+        .todoitem .txt {
+            flex: 1;
+            word-break: break-all
+        }
+
+        .todoitem .ts {
+            font-size: .75rem;
+            color: var(--muted);
+            font-variant-numeric: tabular-nums;
+            flex-shrink: 0;
+            margin-right: 2px
+        }
+
+        .todoitem .del {
+            background: none;
+            border: none;
+            color: var(--muted);
+            cursor: pointer;
+            font-size: 1rem;
+            opacity: .5;
+            transition: .2s;
+            padding: 4px
+        }
+
+        .todoitem .del:hover {
+            color: #f87171;
+            opacity: 1
+        }
+
+        .todofilter {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            flex-wrap: wrap
+        }
+
+        .todofilter .fbtns {
+            display: flex;
+            gap: 6px
+        }
+
+        .fbtn {
+            padding: 5px 14px;
+            border-radius: 999px;
+            border: 1px solid var(--border);
+            background: transparent;
+            color: var(--muted);
+            cursor: pointer;
+            font-size: .82rem
+        }
+
+        .fbtn.active {
+            background: var(--accent);
+            color: #081018;
+            border-color: var(--accent);
+            font-weight: 600
+        }
+
+        .tcount {
+            font-size: .8rem;
+            color: var(--muted)
+        }
+
+        .empty {
+            text-align: center;
+            color: var(--muted);
+            padding: 26px 0;
+            font-size: .9rem
+        }
+
+        .settings {
+            position: fixed;
+            right: 20px;
+            bottom: 20px;
+            z-index: 10;
+            width: 270px;
+            display: none
+        }
+
+        .settings.open {
+            display: block;
+            animation: fadein .25s ease
+        }
+
+        .srow {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 14px;
+            font-size: .9rem
+        }
+
+        .swatches {
+            display: flex;
+            gap: 8px
+        }
+
+        .swatch {
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: .15s
+        }
+
+        .swatch.active {
+            border-color: var(--text);
+            transform: scale(1.15)
+        }
+
+        .themes {
+            display: flex;
+            gap: 6px
+        }
+
+        .themebtn {
+            padding: 5px 10px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: transparent;
+            color: var(--muted);
+            cursor: pointer;
+            font-size: .8rem
+        }
+
+        .themebtn.active {
+            border-color: var(--accent);
+            color: var(--text)
+        }
+
+        .toggle {
+            position: relative;
+            width: 44px;
+            height: 24px;
+            background: var(--border);
+            border-radius: 999px;
+            cursor: pointer;
+            transition: .2s;
+            flex-shrink: 0
+        }
+
+        .toggle::after {
+            content: "";
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--text);
+            transition: .2s
+        }
+
+        .toggle.on {
+            background: var(--accent)
+        }
+
+        .toggle.on::after {
+            left: 23px;
+            background: #081018
+        }
+
+        .offinputs {
+            display: flex;
+            gap: 6px;
+            align-items: center
+        }
+
+        .offinputs input,
+        .offinputs select {
+            width: 58px;
+            padding: 6px 4px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            background: var(--bg2);
+            color: var(--text);
+            text-align: center;
+            font-size: .85rem
+        }
+
+        .offinputs input:focus,
+        .offinputs select:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 8px var(--accent-soft)
+        }
+
+        .offinputs span {
+            font-size: .8rem;
+            color: var(--muted)
+        }
+
+        .kbd {
+            position: fixed;
+            left: 20px;
+            bottom: 20px;
+            z-index: 5;
+            font-size: .72rem;
+            color: var(--muted);
+            background: var(--card);
+            border: 1px solid var(--border);
+            padding: 6px 12px;
+            border-radius: 10px;
+            backdrop-filter: blur(8px)
+        }
+
+        .kbd b {
+            color: var(--text)
+        }
+
+        @media(max-width:820px) {
+
+            .clockgrid,
+            .timergrid {
+                grid-template-columns: 1fr
+            }
+
+            .kbd {
+                display: none
+            }
+        }
+
+        body.focus .wrap>header,
+        body.focus .tabs,
+        body.focus .sidecol,
+        body.focus .kbd,
+        body.focus .settings,
+        body.focus section:not(#tab-clock) {
+            display: none !important
+        }
+
+        body.focus .wrap {
+            max-width: none;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center
+        }
+
+        body.focus .clockgrid {
+            grid-template-columns: 1fr;
+            max-width: 640px;
+            margin: 0 auto;
+            width: 100%
+        }
+
+        body.focus .clockcard {
+            background: transparent;
+            border: none;
+            box-shadow: none;
+            backdrop-filter: none;
+            padding: 30px 20px
+        }
+
+        body.focus .dial {
+            width: min(400px, 80vw)
+        }
+
+        body.focus .digital {
+            font-size: clamp(3rem, 10vw, 5.5rem)
         }
     </style>
 </head>
 
-<body>
-    <p id="time">下午 10:25:09</p>
-    <p id="date">10月16日 星期六</p>
-
+<body data-theme="dark" data-accent="cyan">
+    <canvas id="bg"></canvas>
+    <div class="wrap">
+        <header>
+            <div>
+                <div class="greet" id="greet"></div>
+                <div class="dateline" id="dateline"></div>
+                <div class="quote" id="quote"></div>
+            </div>
+            <div style="display:flex;gap:8px">
+                <button class="iconbtn" id="setBtn" title="设置">⚙️</button>
+                <button class="iconbtn" id="focusBtn" title="专注模式">⛶</button>
+            </div>
+        </header>
+        <nav class="tabs">
+            <button class="tab active" data-tab="clock">🕐 时钟</button>
+            <button class="tab" data-tab="timer">⏱ 计时</button>
+            <button class="tab" data-tab="todo">📝 待办</button>
+        </nav>
+        <main>
+            <section id="tab-clock" class="active">
+                <div class="grid clockgrid">
+                    <div class="card clockcard">
+                        <div class="dial" id="dial">
+                            <div class="hand h" id="hh"></div>
+                            <div class="hand m" id="hm"></div>
+                            <div class="hand s" id="hs"></div>
+                            <div class="pin"></div>
+                        </div>
+                        <div class="digital" id="digital"></div>
+                    </div>
+                    <div class="sidecol grid" style="gap:20px">
+                        <div class="card">
+                            <div class="cardtitle">世界时钟</div>
+                            <div id="world"></div>
+                        </div>
+                        <div class="card">
+                            <div class="cardtitle">今日信息</div>
+                            <div class="infogrid" id="info"></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            <section id="tab-timer">
+                <div class="grid timergrid">
+                    <div class="card timercard">
+                        <div class="cardtitle" style="justify-content:center">秒表</div>
+                        <div class="bigtime" id="swTime">00:00.00</div>
+                        <div class="btnrow" style="justify-content:center">
+                            <button class="btn primary" id="swBtn">开始</button>
+                            <button class="btn" id="swLap" disabled>计次</button>
+                            <button class="btn" id="swReset">重置</button>
+                        </div>
+                        <div class="laps" id="swLaps"></div>
+                    </div>
+                    <div class="card timercard">
+                        <div class="cardtitle" style="justify-content:center">倒计时</div>
+                        <div class="timeinputs">
+                            <input type="number" id="tH" min="0" max="99" placeholder="时" value="0"><span>:</span>
+                            <input type="number" id="tM" min="0" max="59" placeholder="分" value="15"><span>:</span>
+                            <input type="number" id="tS" min="0" max="59" placeholder="秒" value="0">
+                        </div>
+                        <div class="presets">
+                            <button class="preset" data-p="300">5 分钟</button>
+                            <button class="preset" data-p="600">10 分钟</button>
+                            <button class="preset" data-p="1800">30 分钟</button>
+                            <button class="preset" data-p="3600">1 小时</button>
+                        </div>
+                        <div class="bigtime" id="tTime">00:15:00</div>
+                        <div class="btnrow" style="justify-content:center">
+                            <button class="btn primary" id="tBtn">开始</button>
+                            <button class="btn" id="tReset">重置</button>
+                        </div>
+                    </div>
+                    <div class="card timercard">
+                        <div class="cardtitle" style="justify-content:center">番茄钟</div>
+                        <div class="ringwrap">
+                            <svg width="150" height="150" viewBox="0 0 150 150">
+                                <circle class="track" cx="75" cy="75" r="64" fill="none" stroke-width="8"></circle>
+                                <circle class="prog" id="pomRing" cx="75" cy="75" r="64" fill="none" stroke-width="8"
+                                    stroke-dasharray="402.1" stroke-dashoffset="0"></circle>
+                            </svg>
+                            <div class="ringlabel">
+                                <div class="mode" id="pomMode">专注</div>
+                                <div class="time" id="pomTime">25:00</div>
+                            </div>
+                        </div>
+                        <div class="pomdots" id="pomDots" title="4 点 = 4 轮：完成 4 次专注后自动进入长休息"></div>
+                        <div class="btnrow" style="justify-content:center">
+                            <button class="btn primary" id="pomBtn">开始</button>
+                            <button class="btn" id="pomReset">重置</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            <section id="tab-todo">
+                <div class="card">
+                    <div class="cardtitle">待办事项</div>
+                    <div style="display:flex;gap:10px;justify-content:flex-end;margin-bottom:12px">
+                        <button class="btn" id="todoExport" style="padding:6px 14px;font-size:.8rem">导出 .md</button>
+                        <button class="btn" id="todoImport" style="padding:6px 14px;font-size:.8rem">导入 .md</button>
+                        <input type="file" id="todoFile" accept=".md,.markdown,text/markdown,text/plain"
+                            style="display:none">
+                    </div>
+                    <div class="todoinput">
+                        <input type="text" id="todoIn" placeholder="添加新任务，按 Enter 确认…" maxlength="200">
+                        <button class="btn primary" id="todoAdd">添加</button>
+                    </div>
+                    <div class="todofilter">
+                        <div class="fbtns">
+                            <button class="fbtn active" data-f="all">全部</button>
+                            <button class="fbtn" data-f="active">进行中</button>
+                            <button class="fbtn" data-f="done">已完成</button>
+                        </div>
+                        <div style="display:flex;gap:12px;align-items:center">
+                            <span class="tcount" id="tcount"></span>
+                            <button class="btn danger" id="tclear"
+                                style="padding:6px 14px;font-size:.8rem">清除已完成</button>
+                        </div>
+                    </div>
+                    <div id="todoList"></div>
+                </div>
+            </section>
+        </main>
+    </div>
+    <div class="kbd"><b>1/2/3</b> 切换标签 · <b>F</b> 专注模式</div>
+    <div class="settings card" id="settings">
+        <div class="cardtitle">设置</div>
+        <div class="srow"><span>主题</span>
+            <div class="themes">
+                <button class="themebtn" data-theme="dark">深色</button>
+                <button class="themebtn" data-theme="light">浅色</button>
+                <button class="themebtn" data-theme="aurora">极光</button>
+            </div>
+        </div>
+        <div class="srow"><span>强调色</span>
+            <div class="swatches" id="swatches"></div>
+        </div>
+        <div class="srow"><span>UTC 偏移</span>
+            <div class="offinputs">
+                <select id="offH"></select>
+                <span>时</span>
+                <select id="offM">
+                    <option value="0">0</option>
+                    <option value="15">15</option>
+                    <option value="30">30</option>
+                    <option value="45">45</option>
+                </select>
+                <span>分</span>
+            </div>
+        </div>
+        <div class="srow"><span>24 小时制</span>
+            <div class="toggle" id="tg24"></div>
+        </div>
+        <div class="srow"><span>整点报时</span>
+            <div class="toggle" id="tgChime"></div>
+        </div>
+    </div>
     <script>
-        function refresh() {
-            var timeZone = 8;
-            var d = new Date();
-            d.setMinutes(d.getMinutes() + d.getTimezoneOffset() + (timeZone * 60));
-
-            var amOrPm = ["上午", "下午"];
-            var hour = d.getHours() - Math.floor(d.getHours() / 13) * 12;
-            document.getElementById("time").innerHTML = amOrPm[Math.floor(d.getHours() / 12)] + " " + ("0" + hour).slice(-2) + ":" + ("0" + d.getMinutes()).slice(-2) + ":" + ("0" + d.getSeconds()).slice(-2);
-
-            var whichDay = ["日", "一", "二", "三", "四", "五", "六"];
-            document.getElementById("date").innerHTML = (d.getMonth() + 1) + "月" + d.getDate() + "日 星期" + whichDay[d.getDay()];
+        "use strict";
+        const $ = s => document.querySelector(s);
+        const $$ = s => document.querySelectorAll(s);
+        const ACCENTS = {cyan: "#22d3ee", pink: "#f472b6", green: "#34d399", orange: "#fb923c", violet: "#a78bfa"};
+        const settings = Object.assign({theme: "dark", accent: "cyan", h24: false, chime: true}, (function () {try {return JSON.parse(localStorage.getItem("ucSettings") || "{}")} catch (e) {return {}} }));
+        function saveSettings() {localStorage.setItem("ucSettings", JSON.stringify(settings))}
+        function applySettings() {
+            document.body.dataset.theme = settings.theme;
+            document.documentElement.style.setProperty("--accent", ACCENTS[settings.accent]);
+            const r = hexRgb(ACCENTS[settings.accent]);
+            document.documentElement.style.setProperty("--accent-soft", `rgba(${r},.15)`);
+            document.documentElement.style.setProperty("--accent-glow", `rgba(${r},.45)`);
+            $$(".themebtn").forEach(b => b.classList.toggle("active", b.dataset.theme === settings.theme));
+            $$("#swatches .swatch").forEach(b => b.classList.toggle("active", b.dataset.a === settings.accent));
+            $("#tg24").classList.toggle("on", settings.h24);
+            $("#tgChime").classList.toggle("on", settings.chime);
+            applyTzInputs();
+            renderDigital(); renderWorld();
         }
-
-        refresh()
-        setInterval("refresh()", 500)
+        function hexRgb(h) {const n = parseInt(h.slice(1), 16); return (n >> 16 & 255) + "," + ((n >> 8) & 255) + "," + (n & 255)}
+        const swBox = $("#swatches");
+        Object.entries(ACCENTS).forEach(([k, v]) => {const b = document.createElement("div"); b.className = "swatch"; b.dataset.a = k; b.style.background = v; b.onclick = () => {settings.accent = k; saveSettings(); applySettings()}; swBox.appendChild(b)});
+        $$(".themebtn").forEach(b => b.onclick = () => {settings.theme = b.dataset.theme; saveSettings(); applySettings(); resizeBg()});
+        $("#tg24").onclick = () => {settings.h24 = !settings.h24; saveSettings(); applySettings()};
+        function sysOffsetMin() {return -new Date().getTimezoneOffset()}
+        function applyTzInputs() {
+            const off = (settings.utcOff != null) ? settings.utcOff : sysOffsetMin();
+            const h = Math.trunc(Math.abs(off) / 60);
+            $("#offH").value = (off < 0 ? -h : h);
+            const m = Math.abs(off) % 60;
+            $("#offM").value = [0, 15, 30, 45].includes(m) ? String(m) : "0";
+        }
+        function readTz() {
+            const h = parseInt($("#offH").value, 10);
+            const m = parseInt($("#offM").value, 10);
+            if (!Number.isInteger(h) || h < -12 || h > 14 || ![0, 15, 30, 45].includes(m)) {
+                alert("偏移值输入无效，请重新修改：\n小时：-12 ~ 14 的整数\n分钟：0 / 15 / 30 / 45");
+                return false;
+            }
+            settings.utcOff = (h < 0 ? -1 : 1) * (Math.abs(h) * 60 + m);
+            return true;
+        }
+        function onTzChange() {
+            if (readTz()) {saveSettings(); applySettings();}
+            else {applyTzInputs();}
+        }
+        (function () {
+            const sel = $("#offH");
+            for (let i = -12; i <= 14; i++) {
+                const o = document.createElement("option");
+                o.value = String(i);
+                o.textContent = String(i);
+                sel.appendChild(o);
+            }
+        })();
+        $("#offH").addEventListener("change", onTzChange);
+        $("#offM").addEventListener("change", onTzChange);
+        $("#tgChime").onclick = () => {settings.chime = !settings.chime; saveSettings(); applySettings()};
+        $("#setBtn").onclick = () => $("#settings").classList.toggle("open");
+        document.addEventListener("click", e => {if (!e.target.closest("#settings") && !e.target.closest("#setBtn") && e.target.closest("body")) $("#settings").classList.remove("open")});
+        const QUOTES = [
+            "代码是写给人读的，只是顺便让机器执行。",
+            "简单胜于复杂。——《程序员修炼之道》",
+            "完成比完美更重要。",
+            "先让测试失败，再让它通过。",
+            "不要重复自己。",
+            "最好的注释是清晰的命名。",
+            "测量之前不要优化。",
+            "一切皆流，无物常驻。——赫拉克利特",
+            "行胜于言。",
+            "千里之行，始于足下。",
+            "Stay hungry, stay foolish. —— Steve Jobs",
+            "简单是终极的复杂。——达·芬奇"
+        ];
+        function dayOfYear(d) {return Math.floor((d - new Date(d.getFullYear(), 0, 0)) / 864e5)}
+        function isoWeek(d) {const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())); const day = (t.getUTCDay() + 6) % 7; t.setUTCDate(t.getUTCDate() - day + 3); const f = new Date(Date.UTC(t.getUTCFullYear(), 0, 4)); return 1 + Math.round(((t - f) / 864e5 - 3 + ((f.getUTCDay() + 6) % 7)) / 7)}
+        const ZODIAC = [["水瓶座", 1, 20], ["双鱼座", 2, 19], ["白羊座", 3, 21], ["金牛座", 4, 20], ["双子座", 5, 21], ["巨蟹座", 6, 22], ["狮子座", 7, 23], ["处女座", 8, 23], ["天秤座", 9, 23], ["天蝎座", 10, 24], ["射手座", 11, 23], ["摩羯座", 12, 22]];
+        function zodiac(m, d) {for (let i = ZODIAC.length - 1; i >= 0; i--) {const z = ZODIAC[i]; if (m > z[1] || (m === z[1] && d >= z[2])) return z[0]} return "摩羯座"}
+        const ANIMALS = ["鼠", "牛", "虎", "兔", "龙", "蛇", "马", "羊", "猴", "鸡", "狗", "猪"];
+        const WEEKDAYS = ["日", "一", "二", "三", "四", "五", "六"];
+        function displayNow() {
+            if (settings.utcOff == null) return new Date();
+            const shift = (settings.utcOff + new Date().getTimezoneOffset()) * 60000;
+            return new Date(Date.now() + shift);
+        }
+        function renderHeader() {
+            const d = displayNow(), h = d.getHours();
+            const g = h < 5 ? "夜深了" : h < 9 ? "早上好" : h < 12 ? "上午好" : h < 14 ? "中午好" : h < 18 ? "下午好" : "晚上好";
+            $("#greet").textContent = g + "，";
+            const doy = dayOfYear(d);
+            $("#dateline").textContent = `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日 星期${WEEKDAYS[d.getDay()]} · 第 ${isoWeek(d)} 周`;
+            $("#quote").textContent = "“ " + QUOTES[doy % QUOTES.length] + " ”";
+        }
+        function pad(n) {return String(n).padStart(2, "0")}
+        function renderDigital() {
+            const d = displayNow();
+            const h = d.getHours(), m = d.getMinutes(), s = d.getSeconds();
+            const digits = (settings.h24 ? pad(h) : pad(h % 12 || 12)) + ":" + pad(m) + ":" + pad(s);
+            const pfx = settings.h24 ? "" : (h >= 12 ? "下午" : "上午");
+            $("#digital").textContent = (pfx ? pfx + " " : "") + digits;
+            document.title = (pfx ? pfx + " " : "") + digits;
+        }
+        (function buildDial() {
+            const dial = $("#dial");
+            for (let i = 0; i < 60; i++) {
+                const t = document.createElement("div");
+                t.className = "tick" + (i % 5 === 0 ? " major" : "");
+                t.style.setProperty("--r", i * 6 + "deg");
+                dial.appendChild(t);
+            }
+        })();
+        function updateAnalog() {
+            const d = displayNow();
+            const ms = d.getMilliseconds();
+            const s = d.getSeconds() + ms / 1000;
+            const m = d.getMinutes() + s / 60;
+            const h = (d.getHours() % 12) + m / 60;
+            $("#hs").style.transform = `rotate(${s * 6}deg)`;
+            $("#hm").style.transform = `rotate(${m * 6}deg)`;
+            $("#hh").style.transform = `rotate(${h * 30}deg)`;
+        }
+        const WORLD = [["北京", "Asia/Shanghai"], ["东京", "Asia/Tokyo"], ["伦敦", "Europe/London"], ["纽约", "America/New_York"], ["洛杉矶", "America/Los_Angeles"], ["悉尼", "Australia/Sydney"]];
+        function cityTime(tz, now) {
+            const parts = new Intl.DateTimeFormat("en-GB", {timeZone: tz, hourCycle: "h23", hour: "2-digit", minute: "2-digit"}).formatToParts(now);
+            const h = +(parts.find(p => p.type === "hour")?.value || "0");
+            const mi = parts.find(p => p.type === "minute")?.value || "00";
+            if (settings.h24) return pad(h) + ":" + mi;
+            return (h >= 12 ? "下午" : "上午") + " " + pad(h % 12 || 12) + ":" + mi;
+        }
+        function renderWorld() {
+            const now = displayNow();
+            const localWd = now.getDay();
+            $("#world").innerHTML = WORLD.map(([city, tz]) => {
+                const df = new Intl.DateTimeFormat("zh-CN", {timeZone: tz, weekday: "short"});
+                let target; try {target = df.formatToParts(now).find(p => p.type === "weekday").value.replace("周", "")} catch (e) {target = ""}
+                const map = {"日": 0, "一": 1, "二": 2, "三": 3, "四": 4, "五": 5, "六": 6};
+                const twd = map[target] ?? 0;
+                let diff = twd - localWd;
+                if (diff > 3) diff -= 7; if (diff < -3) diff += 7;
+                const tag = diff === 0 ? "" : '<span class="diff">' + (diff > 0 ? "+" + diff + " 天" : diff + " 天") + '</span>';
+                return `<div class="wclock"><span class="city">${city}</span><span><span class="t">${cityTime(tz, now)}</span>${tag}</span></div>`;
+            }).join("");
+        }
+        function renderInfo() {
+            const d = displayNow();
+            const doy = dayOfYear(d);
+            const yearLen = (d.getFullYear() % 4 === 0 && d.getFullYear() % 100 !== 0) || d.getFullYear() % 400 === 0 ? 366 : 365;
+            const left = yearLen - doy + 1;
+            const items = [
+                ["第 N 天", `第 ${doy} / ${yearLen} 天`],
+                ["ISO 周数", `第 ${isoWeek(d)} 周`],
+                ["星座", zodiac(d.getMonth() + 1, d.getDate())],
+                ["生肖", ANIMALS[(d.getFullYear() - 4) % 12] + "年"],
+                ["距新年", `${left} 天`],
+                ["季度", `Q${Math.floor(d.getMonth() / 3) + 1} · ${Math.round(doy / yearLen * 100)}%`]
+            ];
+            $("#info").innerHTML = items.map(([k, v]) => `<div class="infoitem"><div class="k">${k}</div><div class="v">${v}</div></div>`).join("");
+        }
+        let actx = null;
+        function unlockAudio() {
+            try {actx = actx || new (window.AudioContext || window.webkitAudioContext)(); if (actx.state === "suspended") actx.resume()} catch (e) { }
+        }
+        document.addEventListener("pointerdown", unlockAudio, true);
+        function beep(freq = 880, dur = 0.18, when = 0) {
+            try {
+                actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+                if (actx.state === "suspended") actx.resume();
+                const o = actx.createOscillator(), g = actx.createGain();
+                o.type = "sine"; o.frequency.value = freq;
+                const t0 = actx.currentTime + when;
+                g.gain.setValueAtTime(0.0001, t0);
+                g.gain.exponentialRampToValueAtTime(0.25, t0 + 0.02);
+                g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+                o.connect(g); g.connect(actx.destination);
+                o.start(t0); o.stop(t0 + dur + 0.05);
+            } catch (e) { }
+        }
+        let lastHour = null;
+        setInterval(() => {
+            const d = displayNow();
+            if (lastHour !== null && d.getHours() !== lastHour && settings.chime && tAlarm == null) {
+                for (let i = 0; i < 4; i++)beep(660 + i * 110, 0.22, i * 0.3)
+            }
+            lastHour = d.getHours();
+        }, 1000);
+        renderHeader();
+        let lastMin = -1, lastDay = "";
+        function tick() {
+            renderDigital();
+            updateAnalog();
+            const d = displayNow();
+            const m = d.getMinutes();
+            if (m !== lastMin) {lastMin = m; renderWorld(); renderInfo()}
+            const dayKey = d.getFullYear() + "/" + d.getMonth() + "/" + d.getDate();
+            if (dayKey !== lastDay) {lastDay = dayKey; renderHeader()}
+        }
+        setInterval(tick, 250);
+        tick();
+        function switchTab(name) {
+            $$(".tab").forEach(t => t.classList.toggle("active", t.dataset.tab === name));
+            $$("main section").forEach(s => s.classList.toggle("active", s.id === "tab-" + name));
+        }
+        $$(".tab").forEach(t => t.onclick = () => switchTab(t.dataset.tab));
+        let swStart = 0, swAccum = 0, swRunning = false, swRaf = null, laps = [];
+        function swFmt(ms) {
+            const cs = Math.floor(ms / 10) % 100;
+            const s = Math.floor(ms / 1000);
+            const h = Math.floor(s / 3600);
+            const m = Math.floor(s % 3600 / 60);
+            return (h > 0 ? pad(h) + ":" + pad(m) + ":" + pad(s % 60) : pad(m) + ":" + pad(s % 60)) + "." + pad(cs);
+        }
+        function swElapsed() {return swAccum + (swRunning ? performance.now() - swStart : 0)}
+        function swLoop() {
+            const el = $("#swTime");
+            el.textContent = swFmt(swElapsed());
+            swRaf = requestAnimationFrame(swLoop);
+        }
+        $("#swBtn").onclick = () => {
+            if (swRunning) {
+                swAccum = swElapsed();
+                swRunning = false;
+                cancelAnimationFrame(swRaf);
+                $("#swTime").textContent = swFmt(swAccum);
+                $("#swBtn").textContent = "继续";
+                $("#swLap").disabled = true;
+                $("#swTime").classList.remove("running");
+            } else {
+                swRunning = true;
+                swStart = performance.now();
+                swLoop();
+                $("#swBtn").textContent = "暂停";
+                $("#swLap").disabled = false;
+                $("#swTime").classList.add("running");
+            }
+        };
+        $("#swLap").onclick = () => {
+            laps.unshift(swFmt(swElapsed()));
+            $("#swLaps").innerHTML = laps.map((l, i) => `<div><span>第 ${laps.length - i} 次</span><span>${l}</span></div>`).join("");
+        };
+        $("#swReset").onclick = () => {
+            swRunning = false; cancelAnimationFrame(swRaf); swAccum = 0; laps = [];
+            $("#swTime").textContent = "00:00.00"; $("#swTime").classList.remove("running");
+            $("#swBtn").textContent = "开始"; $("#swLap").disabled = true; $("#swLaps").innerHTML = "";
+        };
+        let tTotal = 0, tRemain = 0, tRunning = false, tTimer = null, tAlarm = null;
+        function tAlarmStart() {
+            if (tAlarm) return;
+            tAlarm = setInterval(() => {
+                beep(880, 0.25); beep(1174, 0.25, 0.3)
+            }, 700);
+        }
+        function tAlarmStop() {
+            if (tAlarm) {clearInterval(tAlarm); tAlarm = null;}
+        }
+        function tShow() {
+            const s = Math.max(0, Math.ceil(tRemain / 1000));
+            $("#tTime").textContent = pad(Math.floor(s / 3600)) + ":" + pad(Math.floor(s / 60) % 60) + ":" + pad(s % 60);
+            $("#tTime").classList.toggle("running", tRunning);
+        }
+        function readInputs() {
+            const h = parseInt($("#tH").value || 0), m = parseInt($("#tM").value || 0), s = parseInt($("#tS").value || 0);
+            return (h * 3600 + m * 60 + s) * 1000;
+        }
+        function tStop() {tRunning = false; clearInterval(tTimer); $("#tBtn").textContent = "开始"; tShow()}
+        function tStart() {
+            unlockAudio();
+            if (tRemain <= 0) {tTotal = readInputs(); tRemain = tTotal}
+            if (tTotal <= 0) return;
+            tRunning = true; $("#tBtn").textContent = "暂停";
+            const end = Date.now() + tRemain;
+            tTimer = setInterval(() => {
+                tRemain = end - Date.now();
+                if (tRemain <= 0) {
+                    tRemain = 0;
+                    tStop();
+                    tAlarmStart();
+                    $("#tTime").textContent = "⏰ 时间到！";
+                    return;
+                }
+                tShow();
+            }, 200);
+            tShow();
+        }
+        $("#tBtn").onclick = () => tRunning ? tStop() : tStart();
+        $("#tReset").onclick = () => {tAlarmStop(); tStop(); tRemain = readInputs(); tTotal = readInputs(); tShow()};
+        $$(".preset").forEach(b => b.onclick = () => {
+            tStop(); const p = +b.dataset.p; tTotal = p * 1000; tRemain = p * 1000;
+            $("#tH").value = Math.floor(p / 3600); $("#tM").value = Math.floor(p % 3600 / 60); $("#tS").value = p % 60;
+            tShow();
+        });
+        [["#tH", 99], ["#tM", 59], ["#tS", 59]].forEach(([sel, max]) => {
+            $(sel).addEventListener("input", e => {
+                let v = parseInt(e.target.value, 10);
+                v = Number.isInteger(v) ? Math.max(0, Math.min(max, v)) : 0;
+                e.target.value = v;
+                if (!tRunning) {tTotal = readInputs(); tRemain = tTotal; tShow()}
+            })
+        });
+        tRemain = readInputs(); tTotal = tRemain; tShow();
+        const POM = {work: 25 * 60, short: 5 * 60, long: 15 * 60};
+        const POMNAME = {work: "专注", short: "短休息", long: "长休息"};
+        let pomMode = "work", pomRounds = 0, pomRemain = POM.work * 1000, pomRunning = false, pomTimer = null, pomEnd = 0;
+        const CIRC = 2 * Math.PI * 64;
+        function pomRender() {
+            const total = POM[pomMode] * 1000;
+            const s = Math.max(0, Math.ceil(pomRemain / 1000));
+            $("#pomTime").textContent = pad(Math.floor(s / 60)) + ":" + pad(s % 60);
+            $("#pomMode").textContent = POMNAME[pomMode];
+            $("#pomRing").style.strokeDashoffset = CIRC * (1 - pomRemain / total);
+            let filled = pomRounds % 4;
+            if (pomRounds > 0 && filled === 0) filled = 4;
+            const dots = $("#pomDots");
+            dots.innerHTML = "";
+            for (let i = 0; i < 4; i++) {
+                const el = document.createElement("div");
+                el.className = "pomdot" + (i < filled ? " done" : "");
+                el.title = "第 " + (i + 1) + " 轮专注";
+                dots.appendChild(el);
+            }
+            $("#pomBtn").textContent = pomRunning ? "暂停" : (pomRemain < total ? "继续" : "开始");
+        }
+        function pomFinish() {
+            pomRunning = false; clearInterval(pomTimer);
+            if (settings.chime) {for (let i = 0; i < 3; i++)beep(pomMode === "work" ? 880 : 660, 0.3, i * 0.4)}
+            if (pomMode === "work") {
+                pomRounds++;
+                pomMode = pomRounds % 4 === 0 ? "long" : "short";
+            } else {
+                pomMode = "work";
+            }
+            pomRemain = POM[pomMode] * 1000;
+            pomRender();
+        }
+        $("#pomBtn").onclick = () => {
+            if (pomRunning) {
+                pomRunning = false; clearInterval(pomTimer); pomRemain = pomEnd - Date.now();
+            } else {
+                pomRunning = true; pomEnd = Date.now() + pomRemain;
+                pomTimer = setInterval(() => {pomRemain = pomEnd - Date.now(); if (pomRemain <= 0) {pomRemain = 0; pomFinish()} pomRender()}, 250);
+            }
+            pomRender();
+        };
+        $("#pomReset").onclick = () => {
+            pomRunning = false; clearInterval(pomTimer);
+            pomMode = "work"; pomRounds = 0; pomRemain = POM.work * 1000; pomRender();
+        };
+        pomRender();
+        let todos = (function () {try {const t = JSON.parse(localStorage.getItem("ucTodos") || "[]"); return Array.isArray(t) ? t : []} catch (e) {return []} })();
+        let filter = "all";
+        function saveTodos() {localStorage.setItem("ucTodos", JSON.stringify(todos))}
+        function fmtTs(ts) {
+            if (!ts) return "";
+            const d = new Date(ts), n = new Date();
+            const base = pad(d.getMonth() + 1) + "-" + pad(d.getDate()) + " " + pad(d.getHours()) + ":" + pad(d.getMinutes()) + ":" + pad(d.getSeconds());
+            return d.getFullYear() === n.getFullYear() ? base : d.getFullYear() + "-" + base;
+        }
+        function tsExport(ts) {
+            const d = new Date(ts);
+            return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()) + " " + pad(d.getHours()) + ":" + pad(d.getMinutes()) + ":" + pad(d.getSeconds());
+        }
+        function renderTodos() {
+            const list = $("#todoList");
+            const items = filter === "all" ? todos : todos.filter(t => filter === "active" ? !t.done : t.done);
+            if (items.length === 0) {list.innerHTML = '<div class="empty">' + (todos.length === 0 ? "还没有任务，添加一个吧 ✍️" : "没有匹配的任务") + "</div>";}
+            else {
+                list.innerHTML = items.map(t => `<div class="todoitem${t.done ? " done" : ""}" data-id="${t.id}"><div class="box">✓</div><div class="txt"></div><span class="ts"></span><button class="del" title="删除">✕</button></div>`).join("");
+                list.querySelectorAll(".todoitem").forEach(el => {
+                    const t = todos.find(x => String(x.id) === el.dataset.id);
+                    el.querySelector(".txt").textContent = t.text;
+                    el.querySelector(".ts").textContent = fmtTs(t.ts);
+                    el.querySelector(".box").onclick = () => {t.done = !t.done; saveTodos(); renderTodos()};
+                    el.querySelector(".del").onclick = () => {todos = todos.filter(x => x.id !== t.id); saveTodos(); renderTodos()};
+                });
+            }
+            const done = todos.filter(t => t.done).length;
+            $("#tcount").textContent = `${todos.length} 项 · 已完成 ${done} 项`;
+        }
+        function addTodo() {
+            const v = $("#todoIn").value.trim();
+            if (!v) return;
+            const now = Date.now();
+            todos.unshift({id: now, text: v, done: false, ts: now});
+            $("#todoIn").value = "";
+            saveTodos(); renderTodos();
+        }
+        $("#todoAdd").onclick = addTodo;
+        $("#todoIn").addEventListener("keydown", e => {if (e.key === "Enter") addTodo()});
+        $$(".fbtn").forEach(b => b.onclick = () => {filter = b.dataset.f; $$(".fbtn").forEach(x => x.classList.toggle("active", x === b)); renderTodos()});
+        $("#tclear").onclick = () => {todos = todos.filter(t => !t.done); saveTodos(); renderTodos()};
+        $("#todoExport").onclick = () => {
+            if (todos.length === 0) {alert("没有可导出的任务"); return }
+            const lines = todos.map(t => (t.done ? "- [x] " : "- [ ] ") + t.text + (t.ts ? " (" + tsExport(t.ts) + ")" : ""));
+            const blob = new Blob([lines.join("\n") + "\n"], {type: "text/markdown;charset=utf-8"});
+            const a = document.createElement("a");
+            a.href = URL.createObjectURL(blob);
+            a.download = "todos-" + new Date().toISOString().slice(0, 10) + ".md";
+            a.click();
+            setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+        };
+        $("#todoImport").onclick = () => $("#todoFile").click();
+        $("#todoFile").onchange = e => {
+            const f = e.target.files[0];
+            if (!f) return;
+            const r = new FileReader();
+            r.onload = () => {
+                const keyOf = (text, ts) => text + "\u0000" + (ts ? Math.floor(ts / 1000) : "");
+                const parsed = [];
+                String(r.result).split(/\r?\n/).forEach(l => {
+                    const m = l.match(/^\s*[-*+]\s*\[([ xX])\]\s*(.+?)(?:\s*\((\d{4})-(\d{1,2})-(\d{1,2})[ T]?(\d{1,2}):(\d{2})(?::(\d{2}))?\))?\s*$/);
+                    if (!m) return;
+                    const text = m[2].trim();
+                    let ts = m[3] ? new Date(+m[3], +m[4] - 1, +m[5], +m[6], +m[7], +(m[8] || 0)).getTime() : Date.now();
+                    if (isNaN(ts)) ts = Date.now();
+                    parsed.push({
+                        item: {id: Date.now() + Math.random(), text: text, done: m[1].toLowerCase() === "x", ts: ts},
+                        key: keyOf(text, m[3] ? ts : "")
+                    });
+                });
+                if (parsed.length === 0) {alert("未在文件中找到形如「- [ ] 任务」的 Markdown 勾选项"); return }
+                const have = new Set(todos.map(t => keyOf(t.text, t.ts)));
+                parsed.forEach(p => {
+                    if (have.has(p.key)) return;
+                    todos.push(p.item);
+                    have.add(p.key);
+                });
+                saveTodos();
+                renderTodos();
+            };
+            r.readAsText(f, "utf-8");
+            e.target.value = "";
+        };
+        renderTodos();
+        function toggleFocus() {
+            const on = !document.body.classList.contains("focus");
+            if (on) {
+                switchTab("clock");
+                document.body.classList.add("focus");
+                if (document.documentElement.requestFullscreen) {try {document.documentElement.requestFullscreen()} catch (e) { } }
+            } else {
+                document.body.classList.remove("focus");
+                if (document.fullscreenElement) {try {document.exitFullscreen()} catch (e) { } }
+            }
+        }
+        $("#focusBtn").onclick = toggleFocus;
+        document.addEventListener("fullscreenchange", () => {
+            if (!document.fullscreenElement) document.body.classList.remove("focus");
+        });
+        document.addEventListener("keydown", e => {
+            if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") return;
+            if (e.key === "1") switchTab("clock");
+            if (e.key === "2") switchTab("timer");
+            if (e.key === "3") switchTab("todo");
+            if (e.key === "f" || e.key === "F") toggleFocus();
+        });
+        const canvas = $("#bg"), ctx = canvas.getContext("2d");
+        let parts = [];
+        function resizeBg() {
+            canvas.width = innerWidth; canvas.height = innerHeight;
+            parts = Array.from({length: Math.min(70, innerWidth / 16)}, () => ({
+                x: Math.random() * canvas.width, y: Math.random() * canvas.height,
+                r: Math.random() * 2 + 0.5, vx: (Math.random() - 0.5) * 0.3, vy: (Math.random() - 0.5) * 0.3,
+                a: Math.random() * 0.5 + 0.15
+            }));
+        }
+        resizeBg();
+        addEventListener("resize", resizeBg);
+        function drawBg() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            const ac = getComputedStyle(document.documentElement).getPropertyValue("--accent").trim() || "#22d3ee";
+            const r = hexRgb(ac).split(",").map(Number);
+            parts.forEach(p => {
+                p.x += p.vx; p.y += p.vy;
+                if (p.x < 0) p.x = canvas.width; if (p.x > canvas.width) p.x = 0;
+                if (p.y < 0) p.y = canvas.height; if (p.y > canvas.height) p.y = 0;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(${r},${p.a})`;
+                ctx.fill();
+            });
+            requestAnimationFrame(drawBg);
+        }
+        drawBg();
+        applySettings();
     </script>
-
 </body>
 
 </html>
