@@ -1,0 +1,1054 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>小说编辑器</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box
+        }
+
+        :root {
+            --accent: #22d3ee;
+            --accent-soft: rgba(34, 211, 238, .15);
+            --accent-glow: rgba(34, 211, 238, .45);
+            --edit-fs: 16px;
+            --edit-font: "Segoe UI", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif
+        }
+
+        body[data-theme="dark"] {
+            --bg: #0a0e1a;
+            --bg2: #111832;
+            --card: rgba(255, 255, 255, .05);
+            --text: #eef2ff;
+            --muted: #8b93b5;
+            --border: rgba(255, 255, 255, .1);
+            --shadow: rgba(0, 0, 0, .5)
+        }
+
+        body[data-theme="light"] {
+            --bg: #eef1f8;
+            --bg2: #f8fafc;
+            --card: rgba(255, 255, 255, .75);
+            --text: #1a2035;
+            --muted: #5b6480;
+            --border: rgba(20, 30, 60, .1);
+            --shadow: rgba(30, 40, 80, .15)
+        }
+
+        body[data-theme="aurora"] {
+            --bg: #0b1020;
+            --bg2: #141b38;
+            --card: rgba(255, 255, 255, .06);
+            --text: #f0f4ff;
+            --muted: #9aa3c8;
+            --border: rgba(255, 255, 255, .12);
+            --shadow: rgba(0, 0, 0, .5)
+        }
+
+        html {
+            scroll-behavior: smooth
+        }
+
+        body {
+            min-height: 100vh;
+            font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+            color: var(--text);
+            background: var(--bg);
+            overflow-x: hidden
+        }
+
+        body[data-theme="aurora"] {
+            background: linear-gradient(130deg, #0b1020, #1a1440, #0e2a3f, #2a1045, #0b1020);
+            background-size: 400% 400%;
+            animation: aurora 18s ease infinite
+        }
+
+        @keyframes aurora {
+            0% {
+                background-position: 0% 50%
+            }
+
+            50% {
+                background-position: 100% 50%
+            }
+
+            100% {
+                background-position: 0% 50%
+            }
+        }
+
+        #bg {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none
+        }
+
+        .wrap {
+            position: relative;
+            z-index: 1;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 32px 20px 60px
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 16px;
+            margin-bottom: 24px
+        }
+
+        .greet {
+            font-size: clamp(1.6rem, 4vw, 2.4rem);
+            font-weight: 700;
+            letter-spacing: .5px;
+            background: linear-gradient(90deg, var(--text), var(--accent));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent
+        }
+
+        .dateline {
+            color: var(--muted);
+            margin-top: 6px;
+            font-size: .95rem
+        }
+
+        .iconbtn {
+            background: var(--card);
+            border: 1px solid var(--border);
+            color: var(--text);
+            width: 42px;
+            height: 42px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 1.1rem;
+            backdrop-filter: blur(8px);
+            transition: .2s;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center
+        }
+
+        .iconbtn svg {
+            display: block
+        }
+
+        .iconbtn:hover {
+            border-color: var(--accent);
+            box-shadow: 0 0 14px var(--accent-glow);
+            transform: translateY(-1px)
+        }
+
+        .card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            backdrop-filter: blur(12px);
+            box-shadow: 0 8px 30px var(--shadow);
+            padding: 24px
+        }
+
+        .grid {
+            display: grid;
+            gap: 20px
+        }
+
+        .maingrid {
+            grid-template-columns: 1fr 320px;
+            align-items: start
+        }
+
+        .maincol,
+        .sidecol,
+        .cell,
+        .addbar {
+            min-width: 0
+        }
+
+        .cardtitle {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--muted);
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px
+        }
+
+        .cardtitle::before {
+            content: "";
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--accent);
+            box-shadow: 0 0 8px var(--accent)
+        }
+
+        .btnrow {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 16px
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            background: var(--card);
+            color: var(--text);
+            cursor: pointer;
+            font-size: .9rem;
+            transition: .2s;
+            backdrop-filter: blur(6px)
+        }
+
+        .btn:hover {
+            border-color: var(--accent);
+            transform: translateY(-1px)
+        }
+
+        .btn.primary {
+            background: var(--accent);
+            color: #081018;
+            border-color: var(--accent);
+            font-weight: 700;
+            box-shadow: 0 4px 16px var(--accent-glow)
+        }
+
+        .empty {
+            text-align: center;
+            color: var(--muted);
+            padding: 26px 0;
+            font-size: .9rem
+        }
+
+        .cells {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            margin-bottom: 18px
+        }
+
+        .cell {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            backdrop-filter: blur(12px);
+            box-shadow: 0 8px 30px var(--shadow);
+            padding: 18px 20px;
+            transition: border-color .2s, box-shadow .2s
+        }
+
+        .cell:hover {
+            border-color: var(--accent-glow)
+        }
+
+        .cellhead {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px
+        }
+
+        .cellno {
+            font-size: .75rem;
+            color: var(--muted);
+            font-variant-numeric: tabular-nums;
+            min-width: 1.4em
+        }
+
+        .typeSel {
+            padding: 5px 10px;
+            border-radius: 999px;
+            border: 1px solid var(--border);
+            background: var(--bg2);
+            color: var(--text);
+            font-size: .82rem;
+            cursor: pointer;
+            backdrop-filter: blur(6px)
+        }
+
+        .typeSel:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 8px var(--accent-soft)
+        }
+
+        .headbtns {
+            margin-left: auto;
+            display: flex;
+            gap: 5px
+        }
+
+        .hbtn {
+            width: 28px;
+            height: 28px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: transparent;
+            color: var(--muted);
+            cursor: pointer;
+            font-size: .85rem;
+            transition: .15s;
+            line-height: 1
+        }
+
+        .hbtn:hover {
+            color: var(--text);
+            border-color: var(--accent)
+        }
+
+        .hbtn.del:hover {
+            color: #f87171;
+            border-color: #f87171
+        }
+
+        .hbtn:disabled {
+            opacity: .25;
+            cursor: not-allowed
+        }
+
+        .hbtn:disabled:hover {
+            color: var(--muted);
+            border-color: var(--border)
+        }
+
+        .cellinput {
+            width: 100%;
+            padding: 10px 14px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            background: var(--bg2);
+            color: var(--text);
+            font-size: var(--edit-fs);
+            font-family: var(--edit-font);
+            line-height: 1.5;
+            overflow: hidden;
+            resize: none;
+            backdrop-filter: blur(6px)
+        }
+
+        .cellinput::placeholder {
+            color: var(--muted);
+            opacity: .65
+        }
+
+        .cellinput:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 10px var(--accent-soft)
+        }
+
+        .speakers {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            margin-bottom: 9px
+        }
+
+        .chipsel {
+            padding: 4px 13px;
+            border-radius: 999px;
+            border: 1px solid var(--border);
+            background: transparent;
+            color: var(--muted);
+            cursor: pointer;
+            font-size: .82rem;
+            transition: .15s
+        }
+
+        .chipsel:hover {
+            color: var(--text);
+            border-color: var(--accent)
+        }
+
+        .chipsel.on {
+            background: var(--accent);
+            color: #081018;
+            border-color: var(--accent);
+            font-weight: 600;
+            box-shadow: 0 2px 10px var(--accent-glow)
+        }
+
+        .nochar {
+            font-size: .8rem;
+            color: var(--muted)
+        }
+
+        .sepline {
+            border-top: 1px dashed var(--border);
+            margin: 10px 4px
+        }
+
+        .charadd {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 14px
+        }
+
+        .charadd input {
+            flex: 1;
+            min-width: 0;
+            padding: 10px 14px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            background: var(--bg2);
+            color: var(--text);
+            font-size: .9rem;
+            font-family: var(--edit-font)
+        }
+
+        .charadd input::placeholder {
+            color: var(--muted);
+            opacity: .65
+        }
+
+        .charadd input:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 10px var(--accent-soft)
+        }
+
+        .charitem {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 10px;
+            border-bottom: 1px dashed var(--border);
+            transition: .15s
+        }
+
+        .charitem:last-child {
+            border-bottom: none
+        }
+
+        .charitem:hover {
+            background: var(--accent-soft)
+        }
+
+        .charitem .txt {
+            flex: 1;
+            word-break: break-all;
+            font-size: .92rem;
+            font-family: var(--edit-font)
+        }
+
+        .charitem .del {
+            background: none;
+            border: none;
+            color: var(--muted);
+            cursor: pointer;
+            font-size: .9rem;
+            opacity: .5;
+            transition: .2s;
+            padding: 4px
+        }
+
+        .charitem .del:hover {
+            color: #f87171;
+            opacity: 1
+        }
+
+        .kbd {
+            position: fixed;
+            left: 20px;
+            bottom: 20px;
+            z-index: 5;
+            font-size: .72rem;
+            color: var(--muted);
+            background: var(--card);
+            border: 1px solid var(--border);
+            padding: 6px 12px;
+            border-radius: 10px;
+            backdrop-filter: blur(8px)
+        }
+
+        .kbd b {
+            color: var(--text)
+        }
+
+        .settings {
+            position: fixed;
+            right: 20px;
+            bottom: 20px;
+            z-index: 10;
+            width: 270px;
+            display: none
+        }
+
+        .settings.open {
+            display: block;
+            animation: fadein .25s ease
+        }
+
+        .srow {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 14px;
+            font-size: .9rem
+        }
+
+        .swatches {
+            display: flex;
+            gap: 8px
+        }
+
+        .swatch {
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: .15s
+        }
+
+        .swatch.active {
+            border-color: var(--text);
+            transform: scale(1.15)
+        }
+
+        .fsize {
+            display: flex;
+            align-items: center;
+            gap: 8px
+        }
+
+        .fsize span {
+            min-width: 2.2em;
+            text-align: center;
+            font-size: .85rem;
+            font-variant-numeric: tabular-nums
+        }
+
+        .fontsel {
+            padding: 5px 10px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: var(--bg2);
+            color: var(--text);
+            font-size: .82rem;
+            cursor: pointer
+        }
+
+        .fontsel:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 8px var(--accent-soft)
+        }
+
+        .themes {
+            display: flex;
+            gap: 6px
+        }
+
+        .themebtn {
+            padding: 5px 10px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: transparent;
+            color: var(--muted);
+            cursor: pointer;
+            font-size: .8rem
+        }
+
+        .themebtn.active {
+            border-color: var(--accent);
+            color: var(--text)
+        }
+
+        @keyframes fadein {
+            from {
+                opacity: 0;
+                transform: translateY(10px)
+            }
+
+            to {
+                opacity: 1;
+                transform: none
+            }
+        }
+
+        @media(max-width:900px) {
+            .maingrid {
+                grid-template-columns: 1fr
+            }
+
+            .kbd {
+                display: none
+            }
+        }
+
+        body.focus .wrap>header,
+        body.focus .sidecol,
+        body.focus .addbar,
+        body.focus .kbd,
+        body.focus .settings {
+            display: none !important
+        }
+
+        body.focus .maingrid {
+            grid-template-columns: 1fr;
+            max-width: 760px;
+            width: 100%;
+            margin: 0 auto
+        }
+    </style>
+</head>
+
+<body data-theme="dark">
+    <canvas id="bg"></canvas>
+    <div class="wrap">
+        <header>
+            <div>
+                <div class="greet">小说编辑器</div>
+                <div class="dateline" id="statline"></div>
+            </div>
+            <div style="display:flex;gap:8px">
+                <button class="iconbtn" id="setBtn" title="设置">⚙️</button>
+                <button class="iconbtn" id="focusBtn" title="专注模式"><svg width="18" height="18" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M8 3H5a2 2 0 0 0-2 2v3"></path>
+                        <path d="M16 3h3a2 2 0 0 1 2 2v3"></path>
+                        <path d="M8 21H5a2 2 0 0 1-2-2v-3"></path>
+                        <path d="M16 21h3a2 2 0 0 0 2-2v-3"></path>
+                    </svg></button>
+            </div>
+        </header>
+        <main>
+            <div class="grid maingrid">
+                <section class="maincol">
+                    <div class="cells" id="cells"></div>
+                    <div class="card addbar">
+                        <div class="cardtitle">添加新行</div>
+                        <div class="btnrow" style="margin-top:0">
+                            <button class="btn" data-add="title">＋ 标题</button>
+                            <button class="btn" data-add="intro">＋ 引入</button>
+                            <button class="btn" data-add="line">＋ 台词</button>
+                            <button class="btn" data-add="action">＋ 动作</button>
+                            <button class="btn" data-add="sep">＋ 分隔</button>
+                        </div>
+                    </div>
+                </section>
+                <aside class="sidecol grid" style="gap:20px">
+                    <div class="card">
+                        <div class="cardtitle">角色列表</div>
+                        <div class="charadd">
+                            <input type="text" id="charIn" placeholder="添加角色，按 Enter 确认…">
+                            <button class="btn primary" id="charAdd">添加</button>
+                        </div>
+                        <div id="charList"></div>
+                    </div>
+                    <div class="card">
+                        <div class="cardtitle">文档操作</div>
+                        <div style="display:flex;gap:10px;margin-bottom:14px">
+                            <button class="btn" id="exportBtn" style="flex:1">导出 .md</button>
+                            <button class="btn" id="importBtn" style="flex:1">导入 .md</button>
+                            <input type="file" id="fileIn" accept=".md,.markdown,text/markdown,text/plain"
+                                style="display:none">
+                        </div>
+                        <button class="btn primary" id="clearBtn" style="width:100%">清空文档</button>
+                    </div>
+                </aside>
+            </div>
+        </main>
+    </div>
+    <div class="kbd"><b>Enter</b> 新增下一行 · <b>Ctrl+S</b> 导出 · <b>F</b> 专注模式</div>
+    <div class="settings card" id="settings">
+        <div class="cardtitle">设置</div>
+        <div class="srow"><span>主题</span>
+            <div class="themes">
+                <button class="themebtn" data-theme="dark">深色</button>
+                <button class="themebtn" data-theme="light">浅色</button>
+                <button class="themebtn" data-theme="aurora">极光</button>
+            </div>
+        </div>
+        <div class="srow"><span>强调色</span>
+            <div class="swatches" id="swatches"></div>
+        </div>
+        <div class="srow"><span>字体大小</span>
+            <div class="fsize">
+                <button class="hbtn" id="fsMinus" title="缩小">−</button>
+                <span id="fsVal">16</span>
+                <button class="hbtn" id="fsPlus" title="放大">＋</button>
+            </div>
+        </div>
+        <div class="srow"><span>字体</span>
+            <select class="fontsel" id="fontSel">
+                <option value="default">默认</option>
+                <option value="serif">宋体</option>
+                <option value="heiti">黑体</option>
+                <option value="kai">楷体</option>
+                <option value="mono">等宽</option>
+            </select>
+        </div>
+    </div>
+    <script>
+        "use strict";
+        const $ = s => document.querySelector(s);
+        const $$ = s => document.querySelectorAll(s);
+        const ACCENTS = {cyan: "#22d3ee", pink: "#f472b6", green: "#34d399", orange: "#fb923c", violet: "#a78bfa"};
+        const FONTS = {
+            default: '"Segoe UI","PingFang SC","Microsoft YaHei",system-ui,sans-serif',
+            serif: '"Songti SC","STSong","SimSun","Noto Serif CJK SC","Noto Serif SC",serif',
+            heiti: '"Heiti SC","STHeiti","SimHei","Noto Sans CJK SC","Noto Sans SC",sans-serif',
+            kai: '"Kaiti SC","STKaiti","KaiTi","Noto Serif CJK SC",serif',
+            mono: 'ui-monospace,SFMono-Regular,Consolas,"Courier New",monospace'
+        };
+        const settings = Object.assign({theme: "dark", accent: "cyan", fontSize: 16, font: "default"}, (function () {try {return JSON.parse(localStorage.getItem("ucSettings") || "{}")} catch (e) {return {}} }));
+        function saveSettings() {localStorage.setItem("ucSettings", JSON.stringify(settings))}
+        function hexRgb(h) {const n = parseInt(h.slice(1), 16); return (n >> 16 & 255) + "," + ((n >> 8) & 255) + "," + (n & 255)}
+        function applySettings() {
+            const theme = ["dark", "light", "aurora"].includes(settings.theme) ? settings.theme : "dark";
+            const accent = ACCENTS[settings.accent] ? settings.accent : "cyan";
+            document.body.dataset.theme = theme;
+            document.documentElement.style.setProperty("--accent", ACCENTS[accent]);
+            const r = hexRgb(ACCENTS[accent]);
+            document.documentElement.style.setProperty("--accent-soft", `rgba(${r},.15)`);
+            document.documentElement.style.setProperty("--accent-glow", `rgba(${r},.45)`);
+            settings.fontSize = Math.min(36, Math.max(12, Math.round(+settings.fontSize) || 16));
+            document.documentElement.style.setProperty("--edit-fs", settings.fontSize + "px");
+            if ($("#fsVal")) $("#fsVal").textContent = settings.fontSize;
+            $$(".cellinput").forEach(autoSize);
+            document.documentElement.style.setProperty("--edit-font", FONTS[settings.font] || FONTS.default);
+            if ($("#fontSel")) $("#fontSel").value = settings.font || "default";
+            $$(".themebtn").forEach(b => b.classList.toggle("active", b.dataset.theme === theme));
+            $$("#swatches .swatch").forEach(b => b.classList.toggle("active", b.dataset.a === accent));
+        }
+        (function () {
+            const swBox = $("#swatches");
+            Object.entries(ACCENTS).forEach(([k, v]) => {const b = document.createElement("div"); b.className = "swatch"; b.dataset.a = k; b.style.background = v; b.onclick = () => {settings.accent = k; saveSettings(); applySettings()}; swBox.appendChild(b)});
+            $$(".themebtn").forEach(b => b.onclick = () => {settings.theme = b.dataset.theme; saveSettings(); applySettings(); resizeBg()});
+            function holdStep(el, fn) {
+                let t = null;
+                const stop = () => {clearInterval(t); t = null};
+                el.addEventListener("mousedown", e => {e.preventDefault(); fn(); t = setInterval(fn, 110)});
+                el.addEventListener("click", e => {if (e.detail === 0) fn()});
+                ["mouseup", "mouseleave", "touchend", "blur", "contextmenu"].forEach(ev => el.addEventListener(ev, stop));
+                window.addEventListener("blur", stop);
+            }
+            holdStep($("#fsMinus"), () => {settings.fontSize = Math.max(12, settings.fontSize - 1); saveSettings(); applySettings()});
+            holdStep($("#fsPlus"), () => {settings.fontSize = Math.min(36, settings.fontSize + 1); saveSettings(); applySettings()});
+            $("#fontSel").onchange = e => {settings.font = e.target.value; saveSettings(); applySettings()};
+            $("#setBtn").onclick = () => $("#settings").classList.toggle("open");
+            document.addEventListener("click", e => {if (!e.target.closest("#settings") && !e.target.closest("#setBtn") && e.target.closest("body")) $("#settings").classList.remove("open")});
+        })();
+        const TYPES = {
+            title: {name: "标题", icon: "📌", ph: "章节标题，按 Enter 新增下一行…"},
+            intro: {name: "引入", icon: "📍", ph: "场景引入，按 Enter 新增下一行…"},
+            line: {name: "台词", icon: "💬", ph: "角色发言，按 Enter 新增下一行…"},
+            action: {name: "动作", icon: "🎭", ph: "动作 / 心理描写，按 Enter 新增下一行…"},
+            sep: {name: "分隔", icon: "➖", ph: ""}
+        };
+        function uid() {return Date.now().toString(36) + Math.random().toString(36).slice(2, 7)}
+        let cells, chars;
+        (function () {
+            let d = null;
+            try {d = JSON.parse(localStorage.getItem("scriptDoc") || "null")} catch (e) {d = null}
+            if (d && Array.isArray(d.cells) && Array.isArray(d.chars)) {
+                cells = d.cells.map(c => {
+                    c = Object.assign({type: "title", text: "", speakers: []}, c || {});
+                    c.id = uid();
+                    if (typeof c.text !== "string") c.text = "";
+                    if (!Array.isArray(c.speakers)) c.speakers = []; else c.speakers = c.speakers.filter(x => typeof x === "string");
+                    if (!TYPES[c.type]) c.type = "title";
+                    return c;
+                });
+                chars = d.chars.filter(x => typeof x === "string");
+            } else {cells = [{id: uid(), type: "title", text: "", speakers: []}]; chars = [];}
+        })();
+        function save() {localStorage.setItem("scriptDoc", JSON.stringify({cells: cells, chars: chars}))}
+        function normQuotes(s) {
+            s = s.replace(/\u201c/g, "「").replace(/\u201d/g, "」").replace(/\u2018/g, "『").replace(/\u2019/g, "』");
+            let d = 0; s = s.replace(/"/g, () => d++ % 2 === 1 ? "」" : "「");
+            let q = 0; s = s.replace(/'/g, () => q++ % 2 === 1 ? "』" : "『");
+            return s;
+        }
+        function exportMD() {
+            return cells.map(c => {
+                const t = normQuotes(c.text || "");
+                switch (c.type) {
+                    case "title": return "### " + t;
+                    case "intro": return "> " + t;
+                    case "line": return (c.speakers && c.speakers.length ? c.speakers.join("&") : "画外音") + "：" + t;
+                    case "action": return "（" + t + "）";
+                    default: return "---";
+                }
+            }).join("\n\n") + "\n";
+        }
+        function download(name, content) {
+            const blob = new Blob([content], {type: "text/markdown;charset=utf-8"});
+            const a = document.createElement("a");
+            a.href = URL.createObjectURL(blob);
+            a.download = name;
+            a.click();
+            setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+        }
+        function parseMD(src) {
+            const out = []; const chset = new Set(); let skipped = 0;
+            String(src).replace(/^\uFEFF/, "").split(/\r?\n/).forEach(raw => {
+                const line = raw.trim();
+                if (!line) return;
+                let m;
+                if ((m = line.match(/^###(?!#)\s*(.+)$/))) {out.push({id: uid(), type: "title", text: m[1].trim(), speakers: []}); return;}
+                if ((m = line.match(/^>\s?(.*)$/))) {out.push({id: uid(), type: "intro", text: m[1].trim(), speakers: []}); return;}
+                if (/^(-{3,}|\*{3,}|_{3,})$/.test(line)) {out.push({id: uid(), type: "sep", text: "", speakers: []}); return;}
+                if ((m = line.match(/^[(（]([\s\S]*?)[)）]$/))) {out.push({id: uid(), type: "action", text: m[1].trim(), speakers: []}); return;}
+                if ((m = line.match(/^([^：:]+)([：:])([\s\S]*)$/))) {
+                    const names = m[1].split(/[&＆]/).map(x => x.trim()).filter(Boolean);
+                    if (names.length) {names.forEach(n => chset.add(n)); out.push({id: uid(), type: "line", text: m[3].trim(), speakers: names}); return;}
+                }
+                skipped++;
+            });
+            return {cells: out, chars: Array.from(chset), skipped: skipped};
+        }
+        function updateStat() {
+            const wc = cells.reduce((s, c) => s + ((c.text && c.text.length) || 0), 0);
+            $("#statline").textContent = `共 ${cells.length} 行 · ${chars.length} 个角色 · ${wc} 字`;
+        }
+        function buildChips(el, c) {
+            const box = el.querySelector(".speakers");
+            box.innerHTML = "";
+            if (!chars.length) {box.innerHTML = '<span class="nochar">尚未添加角色，可在角色列表中新增</span>'; return;}
+            chars.forEach(n => {
+                const b = document.createElement("button");
+                b.type = "button";
+                b.className = "chipsel" + (c.speakers.includes(n) ? " on" : "");
+                b.textContent = n;
+                b.onclick = () => {
+                    const i = c.speakers.indexOf(n);
+                    if (i >= 0) c.speakers.splice(i, 1); else c.speakers.push(n);
+                    b.classList.toggle("on");
+                    save();
+                };
+                box.appendChild(b);
+            });
+        }
+        function autoSize(el) {el.style.height = "auto"; el.style.height = el.scrollHeight + "px";}
+        function wireInput(el, c, inp) {
+            inp.addEventListener("input", () => {
+                let v = inp.value;
+                const clean = v.replace(/\r?\n/g, "");
+                if (clean !== v) inp.value = clean;
+                c.text = clean;
+                autoSize(inp); save(); updateStat();
+            });
+            inp.addEventListener("keydown", e => {
+                if (e.key === "Enter" && !e.isComposing && e.keyCode !== 229) {
+                    e.preventDefault();
+                    c.text = normQuotes(c.text);
+                    inp.value = c.text;
+                    save();
+                    addCell("line", c.id, {speakers: []});
+                }
+            });
+        }
+        function makeCell(c, i) {
+            const el = document.createElement("div");
+            el.className = "cell";
+            el.dataset.id = c.id;
+            const opts = Object.keys(TYPES).map(k => `<option value="${k}">${TYPES[k].icon} ${TYPES[k].name}</option>`).join("");
+            el.innerHTML = `
+<div class="cellhead">
+<span class="cellno">${i + 1}</span>
+<select class="typeSel">${opts}</select>
+<span class="headbtns">
+<button class="hbtn up" title="上移">↑</button>
+<button class="hbtn dn" title="下移">↓</button>
+<button class="hbtn del" title="删除此行">✕</button>
+</span>
+</div>
+<div class="cellbody"></div>`;
+            el.querySelector(".typeSel").value = c.type;
+            const body = el.querySelector(".cellbody");
+            if (c.type !== "sep") {
+                if (c.type === "line") {
+                    const sp = document.createElement("div"); sp.className = "speakers";
+                    body.appendChild(sp);
+                    buildChips(el, c);
+                }
+                const inp = document.createElement("textarea");
+                inp.className = "cellinput"; inp.rows = 1; inp.placeholder = TYPES[c.type].ph; inp.value = c.text;
+                body.appendChild(inp);
+                wireInput(el, c, inp);
+            } else {
+                body.innerHTML = '<div class="sepline"></div>';
+            }
+            el.querySelector(".typeSel").onchange = () => {
+                c.type = el.querySelector(".typeSel").value;
+                save(); render();
+                focusCell(c);
+            };
+            el.querySelector(".up").disabled = i === 0;
+            el.querySelector(".dn").disabled = i === cells.length - 1;
+            el.querySelector(".up").onclick = () => {
+                if (i > 0) {cells.splice(i, 1); cells.splice(i - 1, 0, c); save(); render(); focusCell(c)}
+            };
+            el.querySelector(".dn").onclick = () => {
+                if (i < cells.length - 1) {cells.splice(i, 1); cells.splice(i + 1, 0, c); save(); render(); focusCell(c)}
+            };
+            el.querySelector(".del").onclick = () => {
+                cells.splice(i, 1);
+                save(); render();
+                const target = cells[Math.min(i, cells.length - 1)];
+                if (target) focusCell(target);
+            };
+            return el;
+        }
+        function focusCell(c) {
+            const el = document.querySelector(`.cell[data-id="${c.id}"]`);
+            if (!el) return;
+            el.scrollIntoView({behavior: "smooth", block: "center"});
+            const inp = el.querySelector(".cellinput");
+            if (inp) inp.focus();
+        }
+        function addCell(type, afterId, extra) {
+            extra = extra || {};
+            const c = Object.assign({id: uid(), type: type, text: "", speakers: []}, extra);
+            let idx = cells.length;
+            if (afterId) {const f = cells.findIndex(x => x.id === afterId); if (f >= 0) idx = f + 1;}
+            cells.splice(idx, 0, c);
+            render();
+            focusCell(c);
+            save();
+            return c;
+        }
+        function renderChars() {
+            const box = $("#charList");
+            box.innerHTML = "";
+            if (!chars.length) {box.innerHTML = '<div class="empty" style="padding:16px 0">还没有角色，在上方输入框添加吧</div>'; return;}
+            chars.forEach(n => {
+                const d = document.createElement("div");
+                d.className = "charitem";
+                const t = document.createElement("span"); t.className = "txt"; t.textContent = n;
+                const del = document.createElement("button"); del.className = "del"; del.textContent = "✕"; del.title = "删除角色";
+                del.onclick = () => {
+                    if (cells.some(cc => cc.type === "line" && (cc.speakers || []).includes(n))) {alert(`「${n}」已有台词，无法删除`); return;}
+                    chars = chars.filter(x => x !== n);
+                    save(); render();
+                };
+                d.appendChild(t); d.appendChild(del);
+                box.appendChild(d);
+            });
+        }
+        function render() {
+            const box = $("#cells");
+            box.innerHTML = "";
+            if (!cells.length) {
+                box.innerHTML = '<div class="cell" style="text-align:center"><div class="empty">还没有任何行，点击下方按钮添加第一行 ✍️</div></div>';
+            } else {
+                cells.forEach((c, i) => box.appendChild(makeCell(c, i)));
+                box.querySelectorAll(".cellinput").forEach(autoSize);
+            }
+            renderChars();
+            updateStat();
+        }
+        function addChar() {
+            const inp = $("#charIn");
+            const v = inp.value.trim();
+            if (!v) return;
+            if (/[:：&＆]/.test(v)) {alert("角色名不能包含 ： : & ＆ 字符（会破坏台词格式）"); return;}
+            if (chars.includes(v)) {inp.value = ""; return;}
+            chars.push(v);
+            inp.value = "";
+            save(); render();
+            inp.focus();
+        }
+        $("#charAdd").onclick = addChar;
+        $("#charIn").addEventListener("keydown", e => {if (e.key === "Enter" && !e.isComposing && e.keyCode !== 229) {e.preventDefault(); addChar()} });
+        $$("[data-add]").forEach(b => b.onclick = () => addCell(b.dataset.add));
+        function doExport() {
+            if (!cells.length) {alert("文档还是空的，先写点内容吧"); return;}
+            let name = ((cells.find(c => c.type === "title" && c.text) || {}).text || "").replace(/[\\/:*?"<>|\r\n]+/g, "").trim().slice(0, 40);
+            if (!name) {
+                const d = new Date();
+                const p = n => String(n).padStart(2, "0");
+                name = `未命名章节 ${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+            }
+            download(name + ".md", exportMD());
+        }
+        $("#exportBtn").onclick = doExport;
+        $("#importBtn").onclick = () => $("#fileIn").click();
+        $("#fileIn").onchange = e => {
+            const f = e.target.files[0];
+            if (!f) return;
+            const r = new FileReader();
+            r.onerror = () => alert("读取文件失败");
+            r.onload = () => {
+                const p = parseMD(r.result);
+                if (!p.cells.length) {alert("未在文件中找到可识别的行：\n### 标题 / > 引入 / 角色：台词 / （动作） / ---"); return;}
+                if (cells.length && !confirm(`导入将替换当前 ${cells.length} 行内容，继续？`)) return;
+                cells = p.cells;
+                let added = 0;
+                p.chars.forEach(n => {if (!chars.includes(n)) {chars.push(n); added++;} });
+                save(); render();
+                alert(`导入完成：共 ${cells.length} 行，新增角色 ${added} 个` + (p.skipped ? `，跳过无法识别的 ${p.skipped} 行` : ""));
+            };
+            r.readAsText(f, "utf-8");
+            e.target.value = "";
+        };
+        $("#clearBtn").onclick = () => {
+            if (!cells.length) return;
+            if (!confirm(`确定清空全部 ${cells.length} 行？`)) return;
+            cells = [{id: uid(), type: "title", text: "", speakers: []}];
+            save(); render();
+        };
+        function toggleFocus() {
+            const on = !document.body.classList.contains("focus");
+            document.body.classList.toggle("focus", on);
+            if (on && document.documentElement.requestFullscreen) {try {document.documentElement.requestFullscreen().catch(() => { })} catch (e) { } }
+            if (!on && document.fullscreenElement) {try {document.exitFullscreen().catch(() => { })} catch (e) { } }
+        }
+        $("#focusBtn").onclick = toggleFocus;
+        document.addEventListener("fullscreenchange", () => {if (!document.fullscreenElement) document.body.classList.remove("focus")});
+        document.addEventListener("keydown", e => {
+            if ((e.ctrlKey || e.metaKey) && (e.key === "s" || e.key === "S")) {e.preventDefault(); if (!e.repeat) doExport(); return;}
+            const t = e.target.tagName;
+            if (t === "INPUT" || t === "TEXTAREA" || t === "SELECT") return;
+            if ((e.key === "f" || e.key === "F") && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey && !e.repeat) toggleFocus();
+        });
+        const canvas = $("#bg"), ctx = canvas.getContext("2d");
+        let parts = [];
+        function resizeBg() {
+            canvas.width = innerWidth; canvas.height = innerHeight;
+            parts = Array.from({length: Math.min(70, innerWidth / 16)}, () => ({
+                x: Math.random() * canvas.width, y: Math.random() * canvas.height,
+                r: Math.random() * 2 + 0.5, vx: (Math.random() - 0.5) * 0.3, vy: (Math.random() - 0.5) * 0.3,
+                a: Math.random() * 0.5 + 0.15
+            }));
+        }
+        resizeBg();
+        addEventListener("resize", resizeBg);
+        function drawBg() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            const ac = getComputedStyle(document.documentElement).getPropertyValue("--accent").trim() || "#22d3ee";
+            const r = hexRgb(ac).split(",").map(Number);
+            parts.forEach(p => {
+                p.x += p.vx; p.y += p.vy;
+                if (p.x < 0) p.x = canvas.width; if (p.x > canvas.width) p.x = 0;
+                if (p.y < 0) p.y = canvas.height; if (p.y > canvas.height) p.y = 0;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(${r},${p.a})`;
+                ctx.fill();
+            });
+            requestAnimationFrame(drawBg);
+        }
+        drawBg();
+        applySettings();
+        render();
+    </script>
+</body>
+
+</html>
